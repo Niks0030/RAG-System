@@ -225,6 +225,246 @@
   }
   .btn-clear:disabled { opacity: 0.4; cursor: not-allowed; }
 
+  /* OCR toggle */
+  .ocr-section {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+  }
+  .ocr-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .ocr-label-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .ocr-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .ocr-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .toggle-switch {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .toggle-switch input { display: none; }
+  .toggle-track {
+    width: 42px;
+    height: 24px;
+    background: var(--border);
+    border-radius: 99px;
+    position: relative;
+    transition: background 0.2s, box-shadow 0.2s;
+    display: block;
+  }
+  .toggle-switch input:checked + .toggle-track {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+  .toggle-switch input:disabled + .toggle-track { opacity: 0.4; cursor: not-allowed; }
+  .toggle-thumb {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+  .toggle-switch input:checked + .toggle-track .toggle-thumb { transform: translateX(18px); }
+
+  /* ── OCR Scanner (active while OCR runs) ── */
+  .left-panel.scanning #drop-zone,
+  .left-panel.scanning #ocr-section,
+  .left-panel.scanning #status-row,
+  .left-panel.scanning #file-info,
+  .left-panel.scanning #slider-section,
+  .left-panel.scanning #btn-clear { display: none; }
+  .left-panel.scanning #ocr-scanner { display: flex; }
+
+  #ocr-scanner {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+    padding: 8px 0 16px;
+  }
+
+  /* Document shape */
+  .scan-doc {
+    position: relative;
+    width: 88px;
+    height: 112px;
+    background: var(--surface2);
+    border-radius: 4px 14px 4px 4px;
+    overflow: hidden;
+    animation: doc-pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes doc-pulse {
+    0%,100% { box-shadow: 0 0 0 1px var(--border), 0 0 24px rgba(108,99,255,0.25); }
+    50%      { box-shadow: 0 0 0 1px rgba(108,99,255,0.6), 0 0 48px rgba(108,99,255,0.5); }
+  }
+  /* Ruled lines on page */
+  .scan-doc::before {
+    content: '';
+    position: absolute;
+    inset: 16px 10px 10px 10px;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent, transparent 6px,
+      rgba(255,255,255,0.06) 6px, rgba(255,255,255,0.06) 7px
+    );
+  }
+  /* Dog-ear top-right corner */
+  .scan-doc::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 20px; height: 20px;
+    background: linear-gradient(225deg, var(--bg) 50%, rgba(108,99,255,0.25) 50%);
+    border-radius: 0 0 0 4px;
+  }
+  /* "Scanned" highlight that fills top-down in sync with the beam */
+  .scan-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(108,99,255,0.14) 0%, rgba(108,99,255,0.04) 100%);
+    transform-origin: top;
+    transform: scaleY(0);
+    animation: overlay-fill 2.4s ease-in-out infinite;
+    z-index: 1;
+  }
+  @keyframes overlay-fill {
+    0%   { transform: scaleY(0); }
+    92%  { transform: scaleY(1); }
+    100% { transform: scaleY(1); }
+  }
+  /* Glowing scan beam */
+  .scan-beam {
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(to right,
+      transparent 0%,
+      var(--accent) 20%,
+      #fff 50%,
+      var(--accent) 80%,
+      transparent 100%
+    );
+    box-shadow: 0 0 6px 2px var(--accent), 0 0 18px 4px var(--accent-glow);
+    z-index: 2;
+    animation: beam-sweep 2.4s ease-in-out infinite;
+    will-change: top;
+  }
+  @keyframes beam-sweep {
+    0%   { top: 0%;   opacity: 0; }
+    5%   { opacity: 1; }
+    92%  { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+  }
+
+  /* "SCANNING" badge */
+  .scan-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent-glow);
+    border-radius: 99px;
+    padding: 3px 12px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    font-family: 'Syne', sans-serif;
+    text-transform: uppercase;
+  }
+  .scan-badge-dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+  }
+
+  /* Rotating status message */
+  .scan-msg {
+    font-size: 12.5px;
+    color: var(--text);
+    text-align: center;
+    padding: 0 4px;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.35s ease;
+    line-height: 1.5;
+  }
+  .scan-msg.fading { opacity: 0; }
+
+  /* Progress bar */
+  .scan-bar-track {
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .scan-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(to right, var(--accent), #a78bfa);
+    border-radius: 99px;
+    transition: width 0.55s ease;
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
+  /* Live counters */
+  .scan-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .scan-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .ss-val {
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    color: var(--accent);
+    min-width: 52px;
+    text-align: center;
+  }
+  .ss-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+  }
+  .ss-divider {
+    font-size: 18px;
+    color: var(--border);
+    line-height: 1;
+  }
+
   /* ── Right Panel ── */
   .right-panel {
     display: flex;
@@ -292,6 +532,52 @@
     border-color: var(--warn);
     color: var(--warn);
   }
+
+  /* Markdown rendering inside bubbles */
+  .bubble p { margin: 2px 0; }
+  .bubble p:first-child { margin-top: 0; }
+  .bubble p:last-child  { margin-bottom: 0; }
+  .bubble strong { font-weight: 700; }
+  .bubble em     { font-style: italic; }
+  .bubble .md-li {
+    padding-left: 14px;
+    position: relative;
+    margin: 1px 0;
+  }
+  .bubble .md-li::before {
+    content: '•';
+    position: absolute;
+    left: 2px;
+    color: var(--accent);
+  }
+  /* Key-value table */
+  .bubble .md-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 6px 0;
+    font-size: 13.5px;
+  }
+  .bubble .md-table td {
+    padding: 4px 6px;
+    border-bottom: 1px solid rgba(35,38,54,0.7);
+    vertical-align: baseline;
+  }
+  .bubble .md-table tr:last-child td { border-bottom: none; }
+  .bubble .md-table td:first-child { color: var(--text-muted); }
+  .bubble .md-table .md-val {
+    text-align: right;
+    padding-left: 28px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+  .bubble .md-table tr.md-total td {
+    font-weight: 700;
+    color: var(--text);
+    border-top: 1px solid var(--border);
+    padding-top: 6px;
+  }
+  .bubble .md-table tr.md-total .md-val { color: var(--accent); }
 
   /* Typing indicator */
   .typing-indicator {
@@ -419,6 +705,33 @@
       <p>Ask anything. Grounded in your document.</p>
     </div>
 
+    <!-- OCR Scanner (replaces sidebar content while OCR is running) -->
+    <div id="ocr-scanner">
+      <div class="scan-doc">
+        <div class="scan-overlay"></div>
+        <div class="scan-beam"></div>
+      </div>
+      <div class="scan-badge">
+        <span class="scan-badge-dot"></span>
+        Scanning
+      </div>
+      <p class="scan-msg" id="scan-msg">Initializing…</p>
+      <div class="scan-bar-track">
+        <div class="scan-bar" id="scan-bar"></div>
+      </div>
+      <div class="scan-stats">
+        <div class="scan-stat">
+          <span class="ss-val" id="ss-pixels">0</span>
+          <span class="ss-label">pixels read</span>
+        </div>
+        <span class="ss-divider">·</span>
+        <div class="scan-stat">
+          <span class="ss-val" id="ss-chars">0</span>
+          <span class="ss-label">chars found</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Drop Zone -->
     <div class="drop-zone" id="drop-zone">
       <input type="file" id="file-input" accept=".pdf,.docx"/>
@@ -429,8 +742,22 @@
       </div>
     </div>
 
+    <!-- OCR Toggle -->
+    <div class="ocr-section" id="ocr-section">
+      <div class="ocr-row">
+        <div class="ocr-label-group">
+          <span class="ocr-title">Scanned PDF (OCR)</span>
+          <span class="ocr-desc">Extract text from image-based PDFs · English only</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="ocr-toggle"/>
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </label>
+      </div>
+    </div>
+
     <!-- Status -->
-    <div class="status-row">
+    <div class="status-row" id="status-row">
       <div class="status-dot" id="status-dot"></div>
       <span class="status-text" id="status-text">No document uploaded</span>
     </div>
@@ -443,7 +770,7 @@
     </div>
 
     <!-- Temperature Slider -->
-    <div class="slider-section">
+    <div class="slider-section" id="slider-section">
       <label>
         Response Strictness
         <span id="temp-value">0.3</span>
@@ -504,6 +831,12 @@
   const fiIcon     = document.getElementById('fi-icon');
   const fiName     = document.getElementById('fi-name');
   const chunkBadge = document.getElementById('chunk-badge');
+  const ocrToggle  = document.getElementById('ocr-toggle');
+  const leftPanel  = document.querySelector('.left-panel');
+  const scanMsg    = document.getElementById('scan-msg');
+  const scanBar    = document.getElementById('scan-bar');
+  const ssPixels   = document.getElementById('ss-pixels');
+  const ssChars    = document.getElementById('ss-chars');
   const tempSlider = document.getElementById('temp-slider');
   const tempValue  = document.getElementById('temp-value');
   const btnClear   = document.getElementById('btn-clear');
@@ -547,6 +880,85 @@
     charCount.textContent = chatInput.value.length;
   });
 
+  // ── OCR Scanner animation ─────────────────────────────────────────────────
+  const SCAN_MSGS = [
+    'Summoning the reading spirits…',
+    'Teaching pixels to speak…',
+    'Decoding ink into digital bytes…',
+    'Consulting the OCR oracle…',
+    'Pixel by pixel, word by word…',
+    'Converting visual chaos to clarity…',
+    'Light is reading the darkness…',
+    'Waking up text-recognition neurons…',
+    'Almost there — just a few more lines…',
+  ];
+
+  let _scanTimers = [];
+
+  function fmtNum(n) {
+    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
+    return String(n);
+  }
+
+  function startOcrAnimation() {
+    leftPanel.classList.add('scanning');
+    let msgIdx = 0, pixels = 0, chars = 0, progress = 0;
+
+    scanMsg.classList.remove('fading');
+    scanMsg.textContent = SCAN_MSGS[0];
+    scanBar.style.transition = 'none';
+    scanBar.style.width = '0%';
+    ssPixels.textContent = '0';
+    ssChars.textContent  = '0';
+
+    // Rotate messages with a fade transition
+    const tMsg = setInterval(() => {
+      scanMsg.classList.add('fading');
+      setTimeout(() => {
+        msgIdx = (msgIdx + 1) % SCAN_MSGS.length;
+        scanMsg.textContent = SCAN_MSGS[msgIdx];
+        scanMsg.classList.remove('fading');
+      }, 350);
+    }, 2800);
+
+    // Pixel counter — fast increments
+    const tPx = setInterval(() => {
+      pixels += Math.floor(Math.random() * 160000 + 40000);
+      ssPixels.textContent = fmtNum(pixels);
+    }, 160);
+
+    // Char counter — slower increments
+    const tCh = setInterval(() => {
+      chars += Math.floor(Math.random() * 280 + 60);
+      ssChars.textContent = fmtNum(chars);
+    }, 220);
+
+    // Fake progress bar: fills to ~94% over ~40 s, leaving the last jump for completion
+    const tBar = setInterval(() => {
+      if (progress < 94) {
+        progress += Math.random() * 1.6 + 0.3;
+        requestAnimationFrame(() => {
+          scanBar.style.transition = 'width 0.55s ease';
+          scanBar.style.width = Math.min(progress, 94) + '%';
+        });
+      }
+    }, 480);
+
+    _scanTimers = [tMsg, tPx, tCh, tBar];
+  }
+
+  function stopOcrAnimation() {
+    _scanTimers.forEach(clearInterval);
+    _scanTimers = [];
+    // Flash to 100 % then restore sidebar after a brief pause
+    scanMsg.classList.remove('fading');
+    scanMsg.textContent = 'Indexing extracted text…';
+    scanBar.style.transition = 'width 0.3s ease';
+    scanBar.style.width = '100%';
+    setTimeout(() => leftPanel.classList.remove('scanning'), 500);
+  }
+
   // ── Temperature slider ────────────────────────────────────────────────────
   tempSlider.addEventListener('input', () => {
     tempValue.textContent = parseFloat(tempSlider.value).toFixed(1);
@@ -574,13 +986,22 @@
       return;
     }
 
-    setStatus('uploading', 'Uploading and indexing…');
+    const isOcr = ext === 'pdf' && ocrToggle.checked;
+
     fileInfo.classList.remove('show');
     btnClear.disabled = true;
+    ocrToggle.disabled = true;
     setInputEnabled(false);
+
+    if (isOcr) {
+      startOcrAnimation();
+    } else {
+      setStatus('uploading', 'Uploading and indexing…');
+    }
 
     const form = new FormData();
     form.append('file', file);
+    form.append('use_ocr', isOcr ? 'true' : 'false');
 
     try {
       const res = await fetch('/upload', { method: 'POST', body: form });
@@ -591,18 +1012,32 @@
       const data = await res.json();
       sessionId = data.session_id;
 
-      setStatus('ready', 'Document ready');
-      fiIcon.textContent = getFileIcon(file.name);
-      fiName.textContent = data.filename;
-      chunkBadge.textContent = `${data.chunk_count} chunks`;
-      fileInfo.classList.add('show');
-      btnClear.disabled = false;
-      setInputEnabled(true);
-      emptyState.style.display = 'none';
-      showToast(`Indexed ${data.chunk_count} chunks from "${data.filename}"`, 'success');
+      if (isOcr) stopOcrAnimation();
+
+      // Small delay so the 100 % flash is visible before the sidebar restores
+      setTimeout(() => {
+        setStatus('ready', 'Document ready');
+        fiIcon.textContent = getFileIcon(file.name);
+        fiName.textContent = data.filename;
+        chunkBadge.textContent = data.ocr_used
+          ? `${data.chunk_count} chunks · OCR`
+          : `${data.chunk_count} chunks`;
+        fileInfo.classList.add('show');
+        btnClear.disabled = false;
+        setInputEnabled(true);
+        emptyState.style.display = 'none';
+        const label = data.ocr_used
+          ? `OCR extracted ${data.chunk_count} chunks from "${data.filename}"`
+          : `Indexed ${data.chunk_count} chunks from "${data.filename}"`;
+        showToast(label, 'success');
+      }, isOcr ? 550 : 0);
     } catch (e) {
-      setStatus('', 'Upload failed');
-      showToast(e.message, 'error');
+      if (isOcr) stopOcrAnimation();
+      setTimeout(() => {
+        setStatus('', 'Upload failed');
+        ocrToggle.disabled = false;
+        showToast(e.message, 'error');
+      }, isOcr ? 550 : 0);
     }
   }
 
@@ -620,6 +1055,8 @@
     setStatus('', 'No document uploaded');
     fileInfo.classList.remove('show');
     btnClear.disabled = true;
+    ocrToggle.checked = false;
+    ocrToggle.disabled = false;
     setInputEnabled(false);
     chatArea.innerHTML = '';
     chatArea.appendChild(emptyState);
@@ -679,8 +1116,8 @@
           if (!line.startsWith('data:')) continue;
           const payload = line.startsWith('data: ') ? line.slice(6) : line.slice(5);
           if (payload === '[DONE]') break;
-          fullText += payload;
-          assistantBubble.textContent = fullText;
+          fullText += payload.replace(/\\n/g, '\n');
+          assistantBubble.innerHTML = renderMarkdown(fullText);
           if (fullText.includes('This information is not available in the uploaded document')) {
             assistantBubble.classList.add('not-found');
           }
@@ -688,7 +1125,7 @@
         }
       }
     } catch (e) {
-      assistantBubble.textContent = 'An error occurred: ' + e.message;
+      assistantBubble.innerHTML = renderMarkdown('An error occurred: ' + e.message);
       assistantBubble.classList.add('not-found');
       showToast(e.message, 'error');
     } finally {
@@ -696,6 +1133,60 @@
       setInputEnabled(true);
       chatInput.focus();
     }
+  }
+
+  // ── Markdown renderer ────────────────────────────────────────────────────
+  function inlineMd(text) {
+    return text
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*\n]+?)\*/g, '<em>$1</em>');
+  }
+
+  function renderMarkdown(raw) {
+    if (!raw) return '';
+    const lines = raw.split('\n');
+    let html = '';
+    let tableRows = [];
+
+    const flushTable = () => {
+      if (!tableRows.length) return;
+      html += '<table class="md-table">';
+      for (const { key, val, total } of tableRows) {
+        const cls = total ? ' class="md-total"' : '';
+        html += `<tr${cls}><td>${inlineMd(key)}</td><td class="md-val">${inlineMd(val)}</td></tr>`;
+      }
+      html += '</table>';
+      tableRows = [];
+    };
+
+    for (const line of lines) {
+      const liMatch = line.match(/^[-*]\s+([\s\S]*)/);
+      if (liMatch) {
+        const content = liMatch[1].trim();
+        // Strip bold markers to detect key:value pairs regardless of bold wrapping
+        const isTotal = content.includes('**');
+        const stripped = content.replace(/\*\*/g, '');
+        const kv = stripped.match(/^(.+?):\s*(.+)$/);
+        if (kv) {
+          tableRows.push({ key: kv[1].trim(), val: kv[2].trim(), total: isTotal });
+          continue;
+        }
+        flushTable();
+        html += `<div class="md-li">${inlineMd(content)}</div>`;
+        continue;
+      }
+
+      flushTable();
+      if (!line.trim()) {
+        if (html && !html.endsWith('<br/>')) html += '<br/>';
+      } else {
+        html += `<p>${inlineMd(line)}</p>`;
+      }
+    }
+
+    flushTable();
+    return html || inlineMd(raw);
   }
 
   // ── DOM helpers ───────────────────────────────────────────────────────────

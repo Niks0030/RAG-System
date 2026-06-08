@@ -8,3 +8,5 @@ faiss-cpu
 PyMuPDF
 python-docx
 python-multipart
+pytesseract
+Pillow
